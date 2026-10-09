@@ -119,11 +119,14 @@ class MarsApplication {
     // 5. Update energy flow particle systems
     this.energyFlow.update(delta, this.simState);
 
-    // 6. Update Martian dust storm particles
-    this.atmosphere.update(delta);
+    // 6. Update Martian Day & Night Cycle (Lighting, Sky, Moons, Stars, Floodlights)
+    this.lighting.update(this.simState.solTime);
+    this.atmosphere.update(delta, this.simState.solTime);
+    this.facility.update(this.simState.solTime);
 
-    // 7. Update audio sound synthesis pitch
+    // 7. Update audio sound synthesis pitch & day/night ambiance
     this.audioSystem.updateTurbineRPM(this.simState.turbineRPM);
+    this.audioSystem.updateSolAmbience(this.simState.solTime);
 
     // 8. Render Scene
     this.sceneManager.render();

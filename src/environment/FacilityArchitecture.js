@@ -193,6 +193,8 @@ export class FacilityArchitecture {
       { x: -14, z: -12 }
     ];
 
+    this.floodlights = [];
+
     towerCoords.forEach((tc) => {
       const pylonGeo = new THREE.CylinderGeometry(0.15, 0.35, 9.0, 8);
       const pylon = new THREE.Mesh(pylonGeo, this.mat.get('darkAlloy'));
@@ -208,11 +210,25 @@ export class FacilityArchitecture {
       this.group.add(beacon);
 
       // Downward floodlight
-      const floodlight = new THREE.SpotLight(0xffedd5, 1.2, 22, Math.PI / 4, 0.4);
+      const floodlight = new THREE.SpotLight(0xffedd5, 0.2, 26, Math.PI / 4, 0.4);
       floodlight.position.set(tc.x, 8.8, tc.z);
       floodlight.target.position.set(tc.x * 0.5, 0, tc.z * 0.5);
       this.group.add(floodlight);
       this.group.add(floodlight.target);
+
+      this.floodlights.push(floodlight);
     });
+  }
+
+  update(solTime) {
+    // Sol angle: sinAngle <= 0.15 indicates dusk/night
+    const solAngle = ((solTime - 6.0) / 24.0) * Math.PI * 2;
+    const isNight = Math.sin(solAngle) <= 0.15;
+
+    // Modulate floodlight intensity: bright at night, dim/off during midday
+    const targetIntensity = isNight ? 2.5 : 0.15;
+    for (const fl of this.floodlights) {
+      fl.intensity = THREE.MathUtils.lerp(fl.intensity, targetIntensity, 0.1);
+    }
   }
 }

@@ -133,6 +133,18 @@ export class AudioSystem {
     this.turbineOsc.frequency.setTargetAtTime(freq, this.ctx.currentTime, 0.2);
   }
 
+  updateSolAmbience(solTime) {
+    if (!this.ctx || !this.windGain || !this.reactorGain) return;
+    const solAngle = ((solTime - 6.0) / 24.0) * Math.PI * 2;
+    const isNight = Math.sin(solAngle) <= 0.15;
+
+    // At night: quieter cold wind, prominent electrical generator & reactor hum
+    const targetWind = isNight ? 0.11 : 0.18;
+    const targetReactor = isNight ? 0.11 : 0.07;
+    this.windGain.gain.setTargetAtTime(targetWind, this.ctx.currentTime, 0.5);
+    this.reactorGain.gain.setTargetAtTime(targetReactor, this.ctx.currentTime, 0.5);
+  }
+
   playClick() {
     if (!this.ctx || this.isMuted) return;
     try {

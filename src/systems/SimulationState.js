@@ -42,6 +42,13 @@ export class SimulationState {
 
     // Audio state
     this.audioMuted = false;
+
+    // Martian Day / Night (Sol) Simulation State
+    this.solTime = 14.5; // Martian Solar Time (0.0 to 24.0 hours, 14.5 = 14:30 afternoon)
+    this.solDay = 142; // Sol counter
+    this.solAutoCycle = true; // Automatically advance time
+    this.solCycleSpeed = 0.08; // Base hours per second (~5 minutes per 24h sol)
+    this.solSpeedMultiplier = 1.0; // 1x, 5x, 20x
   }
 
   subscribe(listener) {
@@ -152,8 +159,96 @@ export class SimulationState {
     this.notify();
   }
 
+  // Sol Day/Night Simulation Controls
+  setSolTime(hours) {
+    this.solTime = (hours + 24) % 24;
+    this.notify();
+  }
+
+  toggleSolCycle() {
+    this.solAutoCycle = !this.solAutoCycle;
+    this.notify();
+  }
+
+  setSolSpeedMultiplier(mult) {
+    this.solSpeedMultiplier = mult;
+    this.notify();
+  }
+
+  setSolPreset(preset) {
+    switch (preset) {
+      case 'dawn':
+        this.solTime = 6.0;
+        break;
+      case 'noon':
+        this.solTime = 12.0;
+        break;
+      case 'sunset':
+        this.solTime = 18.2;
+        break;
+      case 'midnight':
+        this.solTime = 0.0;
+        break;
+    }
+    this.notify();
+  }
+
+  cycleNextSolPreset() {
+    if (this.solTime >= 4 && this.solTime < 9) {
+      this.setSolPreset('noon');
+    } else if (this.solTime >= 9 && this.solTime < 16) {
+      this.setSolPreset('sunset');
+    } else if (this.solTime >= 16 && this.solTime < 22) {
+      this.setSolPreset('midnight');
+    } else {
+      this.setSolPreset('dawn');
+    }
+  }
+
+  getSolPhaseInfo() {
+    const t = this.solTime;
+    let phase = 'day';
+    let label = 'Midday Sunlight';
+
+    if (t >= 5.0 && t < 7.2) {
+      phase = 'sunrise';
+      label = 'Blue Dawn Sunrise';
+    } else if (t >= 7.2 && t < 17.0) {
+      phase = 'day';
+      label = 'Martian Day';
+    } else if (t >= 17.0 && t < 19.5) {
+      phase = 'sunset';
+      label = 'Blue Twilight Sunset';
+    } else {
+      phase = 'night';
+      label = 'Martian Starry Night';
+    }
+
+    const hours = Math.floor(t);
+    const minutes = Math.floor((t - hours) * 60);
+    const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} MST`;
+
+    return {
+      phase,
+      label,
+      timeString,
+      solDay: this.solDay,
+      solTime: t
+    };
+  }
+
   update(delta) {
-    // If in demo auto-play mode, advance stages
+    // 1. Advance Martian Sol Day / Night Cycle
+    if (this.solAutoCycle) {
+      const prevTime = this.solTime;
+      this.solTime = (this.solTime + delta * this.solCycleSpeed * this.solSpeedMultiplier) % 24.0;
+      // If wrapped around midnight, advance sol counter
+      if (prevTime > 23.0 && this.solTime < 1.0) {
+        this.solDay++;
+      }
+    }
+
+    // 2. If in demo auto-play mode, advance stages
     if (this.isDemonstrating && this.demoPlaying) {
       this.demoTimer += delta * this.demoSpeed;
       if (this.demoTimer >= this.demoStageDuration) {

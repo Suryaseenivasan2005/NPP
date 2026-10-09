@@ -32,6 +32,17 @@ export class UIManager {
     this.telemetryRpm = document.getElementById('val-rpm');
     this.scramBtn = document.getElementById('btn-scram');
 
+    // Sol Day & Night DOM elements
+    this.solClockBtn = document.getElementById('btn-sol-clock');
+    this.solIcon = document.getElementById('sol-icon');
+    this.solText = document.getElementById('sol-text');
+    this.solPopover = document.getElementById('sol-popover');
+    this.solPhaseLabel = document.getElementById('sol-phase-label');
+    this.solSliderTime = document.getElementById('sol-slider-time');
+    this.solSlider = document.getElementById('sol-slider');
+    this.solBtnPlay = document.getElementById('sol-btn-play');
+    this.solBtnSpeed = document.getElementById('sol-btn-speed');
+
     this.bindEvents();
     this.bindSimulationListeners();
   }
@@ -166,6 +177,47 @@ export class UIManager {
       this.guidedTour.stop();
     });
 
+    // 8. Sol Day / Night Controls
+    this.solClockBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.solPopover?.classList.toggle('hidden');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (
+        this.solPopover &&
+        !this.solPopover.contains(e.target) &&
+        !this.solClockBtn?.contains(e.target)
+      ) {
+        this.solPopover.classList.add('hidden');
+      }
+    });
+
+    this.solSlider?.addEventListener('input', (e) => {
+      this.simState.setSolTime(Number(e.target.value));
+    });
+
+    const presetBtns = document.querySelectorAll('.sol-preset-btn');
+    presetBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.audio.playClick();
+        this.simState.setSolPreset(btn.dataset.preset);
+      });
+    });
+
+    this.solBtnPlay?.addEventListener('click', () => {
+      this.audio.playClick();
+      this.simState.toggleSolCycle();
+    });
+
+    this.solBtnSpeed?.addEventListener('click', () => {
+      this.audio.playClick();
+      const speeds = [1.0, 5.0, 20.0];
+      const cur = this.simState.solSpeedMultiplier;
+      const next = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
+      this.simState.setSolSpeedMultiplier(next);
+    });
+
     // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT') return;
@@ -177,6 +229,10 @@ export class UIManager {
           const newMode = this.simState.cameraMode === 'orbit' ? 'walk' : 'orbit';
           this.simState.setCameraMode(newMode);
           this.cameraController.setMode(newMode);
+          break;
+        case 'KeyN':
+          this.simState.cycleNextSolPreset();
+          this.audio.playChime();
           break;
         case 'KeyR':
           this.simState.selectComponent(null);
@@ -196,6 +252,7 @@ export class UIManager {
         case 'Escape':
           this.closeDossier();
           this.helpModal.classList.add('hidden');
+          this.solPopover?.classList.add('hidden');
           if (this.simState.isTouring) this.guidedTour.stop();
           break;
       }
@@ -273,6 +330,44 @@ export class UIManager {
         this.renderDemoStage(state.demonstrationStage, state.demoPlaying);
       } else {
         this.demoPanel.classList.add('hidden');
+      }
+
+      // 3. Martian Sol Day / Night Telemetry Updates
+      const solInfo = state.getSolPhaseInfo();
+      if (this.solText) {
+        this.solText.textContent = `SOL ${solInfo.solDay} • ${solInfo.timeString}`;
+      }
+      if (this.solSliderTime) {
+        this.solSliderTime.textContent = solInfo.timeString;
+      }
+      if (this.solSlider && document.activeElement !== this.solSlider) {
+        this.solSlider.value = state.solTime;
+      }
+      if (this.solIcon) {
+        this.solIcon.textContent =
+          solInfo.phase === 'night'
+            ? '🌌'
+            : solInfo.phase === 'sunset'
+            ? '🌇'
+            : solInfo.phase === 'sunrise'
+            ? '🌅'
+            : '☀️';
+      }
+      if (this.solPhaseLabel) {
+        this.solPhaseLabel.textContent = solInfo.label;
+        this.solPhaseLabel.className =
+          'sol-phase-badge ' +
+          (solInfo.phase === 'night'
+            ? 'phase-night'
+            : solInfo.phase === 'sunset' || solInfo.phase === 'sunrise'
+            ? 'phase-sunset'
+            : '');
+      }
+      if (this.solBtnPlay) {
+        this.solBtnPlay.textContent = state.solAutoCycle ? 'Pause ⏸' : 'Play ▶';
+      }
+      if (this.solBtnSpeed) {
+        this.solBtnSpeed.textContent = `${state.solSpeedMultiplier}x Speed`;
       }
 
       // Highlight active component pill

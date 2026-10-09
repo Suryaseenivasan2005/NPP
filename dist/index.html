@@ -8,8 +8,8 @@
       name="description"
       content="Interactive 3D educational simulation of MARS-01, a conceptual Martian nuclear power plant. Explore reactor cutaways, thermodynamics, and energy conversion on Mars."
     />
-    <script type="module" crossorigin src="/assets/index-D9U6AbSN.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DH2DzNwq.css">
+    <script type="module" crossorigin src="/assets/index-gL7HDf9E.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BL1zz1aE.css">
   </head>
   <body>
     <!-- 3D Three.js Canvas Container -->
@@ -86,6 +86,39 @@
 
         <!-- Action Controls -->
         <div class="hud-actions">
+          <!-- Sol Day/Night Widget -->
+          <div class="hud-sol-wrapper">
+            <button id="btn-sol-clock" class="action-btn sol-clock-btn" title="Martian Day & Night Simulation (N)">
+              <span id="sol-icon">☀️</span>
+              <span id="sol-text">SOL 142 • 14:30 MST</span>
+            </button>
+            
+            <!-- Sol Cycle Control Popover -->
+            <div id="sol-popover" class="sol-popover hidden">
+              <div class="sol-popover-header">
+                <span class="sol-title">MARTIAN SOL CYCLE</span>
+                <span id="sol-phase-label" class="sol-phase-badge">Martian Day</span>
+              </div>
+              
+              <div class="sol-slider-row">
+                <span class="sol-time-display" id="sol-slider-time">14:30 MST</span>
+                <input type="range" id="sol-slider" min="0" max="24" step="0.1" value="14.5" />
+              </div>
+
+              <div class="sol-presets-row">
+                <button class="sol-preset-btn" data-preset="dawn" title="06:00 MST - Blue Sunrise">🌅 Dawn</button>
+                <button class="sol-preset-btn" data-preset="noon" title="12:00 MST - Peak Sun">☀️ Noon</button>
+                <button class="sol-preset-btn" data-preset="sunset" title="18:15 MST - Blue Sunset">🌇 Dusk</button>
+                <button class="sol-preset-btn" data-preset="midnight" title="00:00 MST - Starry Night">🌌 Night</button>
+              </div>
+
+              <div class="sol-cycle-actions">
+                <button id="sol-btn-play" class="demo-ctrl-btn">Pause ⏸</button>
+                <button id="sol-btn-speed" class="demo-ctrl-btn" title="Cycle Speed">1x Speed</button>
+              </div>
+            </div>
+          </div>
+
           <button id="btn-toggle-cutaway" class="action-btn active" title="Toggle Cutaway View (C)">Cutaway: ON</button>
           <button id="btn-toggle-camera" class="action-btn" title="Toggle Orbit / Walk Mode (V)">Mode: Orbit</button>
           <button id="btn-open-demo" class="action-btn" title="Demonstration Mode (D)">Energy Flow</button>
@@ -224,6 +257,10 @@
           <div class="shortcut-row">
             <span>Toggle Camera Mode</span>
             <kbd>V</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Cycle Day / Night (Sol)</span>
+            <kbd>N</kbd>
           </div>
           <div class="shortcut-row">
             <span>Energy Flow Demo</span>
