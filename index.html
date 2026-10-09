@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MARS-01 — Martian Nuclear Research Facility | 3D Interactive Simulator</title>
+    <meta
+      name="description"
+      content="Interactive 3D educational simulation of MARS-01, a conceptual Martian nuclear power plant. Explore reactor cutaways, thermodynamics, and energy conversion on Mars."
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- 3D Three.js Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Center Crosshair & Reticle -->
+    <div id="crosshair"></div>
+    <div id="crosshair-badge"></div>
+
+    <!-- Startup Cinematic Splash Screen -->
+    <div id="splash-overlay">
+      <div class="splash-modal">
+        <div class="splash-header-badge">
+          <span class="status-dot"></span>
+          <span>ARES PLANITIA // COLONY SECTOR 04</span>
+        </div>
+        <h1>MARS-01</h1>
+        <p class="splash-subtitle">MARTIAN NUCLEAR RESEARCH FACILITY • SMR FISSION SYSTEM</p>
+        <p class="splash-desc">
+          Step into humanity's first permanent nuclear fission power plant on Mars.
+          Explore the facility exterior, inspect cutaway cross-sections of the reactor vessel,
+          manipulate control rod assemblies, and discover how nuclear fission thermal energy converts
+          into electricity in the harsh Martian environment.
+        </p>
+        <div class="splash-btn-group">
+          <button id="btn-splash-explore" class="btn-primary">
+            <span>Explore Facility</span>
+            <span>→</span>
+          </button>
+          <button id="btn-splash-tour" class="btn-secondary">
+            <span>Guided Tour</span>
+            <span>✦</span>
+          </button>
+        </div>
+        <p class="splash-disclaimer">
+          Conceptual educational visualization. Distinguishes conceptual thermodynamic principles from real engineering safety. Operating figures are illustrative.
+        </p>
+      </div>
+    </div>
+
+    <!-- Main HUD Overlay -->
+    <div id="hud-root" class="hidden">
+      <!-- Top Status Header Bar -->
+      <header class="hud-top-bar hud-interactive">
+        <div class="hud-brand">
+          <span class="brand-title">MARS-01</span>
+          <span class="brand-location">ARES PLANITIA // SMR-01</span>
+        </div>
+
+        <!-- Live Telemetry Status Strip -->
+        <div class="telemetry-strip" title="Illustrative Real-Time Operating Telemetry">
+          <div class="telemetry-item">
+            <span class="telemetry-label">Thermal Power</span>
+            <span id="val-thermal" class="telemetry-val highlight">50.0 MWth</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Net Electrical</span>
+            <span id="val-electric" class="telemetry-val highlight">18.5 MWe</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Primary Temp</span>
+            <span id="val-temp" class="telemetry-val">315.2 °C</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Steam Press</span>
+            <span id="val-steam" class="telemetry-val">6.50 MPa</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Turbine RPM</span>
+            <span id="val-rpm" class="telemetry-val">3000 RPM</span>
+          </div>
+          <button id="btn-scram" class="btn-scram" title="Emergency SCRAM: Drop all control rods">SCRAM</button>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="hud-actions">
+          <button id="btn-toggle-cutaway" class="action-btn active" title="Toggle Cutaway View (C)">Cutaway: ON</button>
+          <button id="btn-toggle-camera" class="action-btn" title="Toggle Orbit / Walk Mode (V)">Mode: Orbit</button>
+          <button id="btn-open-demo" class="action-btn" title="Demonstration Mode (D)">Energy Flow</button>
+          <button id="btn-open-tour" class="action-btn" title="Start Guided Tour (T)">Tour</button>
+          <button id="btn-reset-view" class="action-btn" title="Reset Camera View (R)">Overview</button>
+          <button id="btn-audio-mute" class="action-btn" title="Toggle Audio (M)">🔊</button>
+          <button id="btn-help" class="action-btn" title="Help & Keyboard Controls (?)">?</button>
+        </div>
+      </header>
+
+      <!-- Bottom Component Quick Strip -->
+      <footer class="hud-bottom-bar hud-interactive">
+        <div class="component-nav-strip">
+          <button class="comp-pill" data-component="vessel">RPV Vessel</button>
+          <button class="comp-pill" data-component="fuel">Fuel Core</button>
+          <button class="comp-pill" data-component="control_rods">Control Rods</button>
+          <button class="comp-pill" data-component="coolant">Coolant Loop</button>
+          <button class="comp-pill" data-component="steam_gen">Steam Gen</button>
+          <button class="comp-pill" data-component="turbine">Turbine & Gen</button>
+          <button class="comp-pill" data-component="shielding">Bio-Shield</button>
+          <button class="comp-pill" data-component="control_room">Control Room</button>
+        </div>
+        <span class="hud-legend-note">CLICK ANY EQUIPMENT IN 3D TO INSPECT • WASD / DRAG TO EXPLORE</span>
+      </footer>
+    </div>
+
+    <!-- Slide-Out Scientific Dossier Drawer (Click-to-Learn) -->
+    <aside id="dossier-panel" class="hidden hud-interactive">
+      <div class="dossier-header">
+        <div>
+          <div id="dossier-designation" class="dossier-designation">SEC-01 // RPV CORE UNIT</div>
+          <h2 id="dossier-title">Reactor Pressure Vessel</h2>
+        </div>
+        <button id="btn-close-dossier" class="btn-close-dossier" title="Close Panel (Esc)">×</button>
+      </div>
+      <div class="dossier-body">
+        <p id="dossier-desc" class="dossier-desc"></p>
+
+        <!-- Dynamic SVG Schematic -->
+        <div class="dossier-schematic-box">
+          <div id="dossier-svg-slot"></div>
+        </div>
+
+        <div class="dossier-section">
+          <h3>Thermodynamic Role</h3>
+          <p id="dossier-role"></p>
+        </div>
+
+        <div class="dossier-section">
+          <h3>Operating Mechanism</h3>
+          <p id="dossier-mechanism"></p>
+        </div>
+
+        <!-- Interactive Action Slot (e.g. Rod Depth Slider) -->
+        <div id="dossier-action-slot"></div>
+
+        <!-- Mars Scientific Note -->
+        <div class="dossier-fact-box">
+          <h4>Mars Operational Note</h4>
+          <p id="dossier-fact"></p>
+        </div>
+
+        <!-- Specifications Table -->
+        <div class="dossier-section">
+          <h3>Technical Specifications</h3>
+          <div id="dossier-specs" class="dossier-specs-table"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Interactive Demonstration Mode Panel -->
+    <div id="demo-panel" class="hidden hud-interactive">
+      <div class="demo-top-strip">
+        <span id="demo-stage-num" class="demo-stage-badge">STAGE 1 OF 5</span>
+        <div class="demo-step-dots">
+          <span class="demo-step-dot active"></span>
+          <span class="demo-step-dot"></span>
+          <span class="demo-step-dot"></span>
+          <span class="demo-step-dot"></span>
+          <span class="demo-step-dot"></span>
+        </div>
+        <button id="demo-btn-close" class="action-btn" title="Exit Demonstration">Exit</button>
+      </div>
+      <div class="demo-content-box">
+        <h3 id="demo-stage-title">1. Nuclear Fission Reaction</h3>
+        <p id="demo-stage-desc"></p>
+        <span id="demo-stage-energy" class="demo-energy-form"></span>
+      </div>
+      <div class="demo-controls-row">
+        <div class="demo-btn-group">
+          <button id="demo-btn-prev" class="demo-ctrl-btn">← Prev</button>
+          <button id="demo-btn-play" class="demo-ctrl-btn">Pause ⏸</button>
+          <button id="demo-btn-next" class="demo-ctrl-btn">Next →</button>
+        </div>
+        <button id="demo-btn-speed" class="demo-ctrl-btn" title="Playback Speed">1.0x</button>
+      </div>
+    </div>
+
+    <!-- Guided Educational Tour Panel -->
+    <div id="tour-panel" class="hidden hud-interactive">
+      <div class="tour-step-badge" id="tour-step-badge">STEP 1 OF 8</div>
+      <h3 id="tour-step-title">Welcome to MARS-01</h3>
+      <p id="tour-step-narration"></p>
+      <div class="tour-btn-row">
+        <button id="tour-btn-prev" class="demo-ctrl-btn">← Previous</button>
+        <button id="tour-btn-skip" class="demo-ctrl-btn">Exit Tour</button>
+        <button id="tour-btn-next" class="btn-primary">Next Step →</button>
+      </div>
+    </div>
+
+    <!-- Keyboard & Help Modal -->
+    <div id="help-modal" class="hidden hud-interactive">
+      <div class="help-modal-box">
+        <h2>MARS-01 Controls & Navigation</h2>
+        <div class="help-shortcuts-grid">
+          <div class="shortcut-row">
+            <span>Rotate / Look</span>
+            <kbd>Left Click + Drag</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Pan Target</span>
+            <kbd>Right Click + Drag</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Zoom In / Out</span>
+            <kbd>Scroll Wheel</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Walk Movement (Walk Mode)</span>
+            <kbd>W / A / S / D</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Toggle Cutaway View</span>
+            <kbd>C</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Toggle Camera Mode</span>
+            <kbd>V</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Energy Flow Demo</span>
+            <kbd>D</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Start Guided Tour</span>
+            <kbd>T</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Reset Camera Overview</span>
+            <kbd>R</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span>Close Panels</span>
+            <kbd>Esc</kbd>
+          </div>
+        </div>
+        <button id="btn-close-help" class="btn-primary" style="width: 100%;">Got It</button>
+      </div>
+    </div>
+
+    <!-- Application Main Script -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
